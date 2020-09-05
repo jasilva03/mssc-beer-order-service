@@ -32,9 +32,11 @@ public class DeallocateOrderAction implements Action<BeerOrderStatusEnum, BeerOr
 
     @Override
     public void execute(StateContext<BeerOrderStatusEnum, BeerOrderEventEnum> context) {
+
         String beerOrderId = (String) context.getMessage().getHeaders().get(BeerOrderManagerImpl.ORDER_ID_HEADER);
         Optional<BeerOrder> beerOrderOptional = beerOrderRepository.findById(UUID.fromString(beerOrderId));
 
+        /*
         beerOrderOptional.ifPresentOrElse(beerOrder -> {
             jmsTemplate.convertAndSend(JmsConfig.DEALLOCATE_ORDER_QUEUE,
                     DeallocateOrderRequest.builder()
@@ -42,5 +44,24 @@ public class DeallocateOrderAction implements Action<BeerOrderStatusEnum, BeerOr
                             .build());
             log.debug("Sent Deallocation Request for order id: " + beerOrderId);
         }, () -> log.error("Beer Order Not Found!"));
+        */
+
+        if(beerOrderOptional.isPresent()) {
+
+            BeerOrder beerOrder = beerOrderOptional.get();
+
+            jmsTemplate.convertAndSend(JmsConfig.DEALLOCATE_ORDER_QUEUE,
+                    DeallocateOrderRequest.builder()
+                            .beerOrderDto(beerOrderMapper.beerOrderToDto(beerOrder))
+                            .build());
+            log.debug("Sent Deallocation Request for order id: " + beerOrderId);
+
+        } else {
+
+            log.error("Beer Order Not Found!");
+
+        }
+
     }
+
 }
